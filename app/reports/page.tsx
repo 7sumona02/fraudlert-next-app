@@ -1,3 +1,4 @@
+'use client'
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
@@ -5,8 +6,31 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { BadgeAlertIcon, BellIcon, ExpandIcon, FilterIcon, ListOrderedIcon, PercentIcon } from "lucide-react"
+import { useEffect, useState } from "react"
+import { AlertCount, getLatestTransactions, TransactionCount } from "@/actions/db"
+import { transactions } from "@prisma/client"
 
 export default function Page() {
+  const [TData, setTData] = useState<{thismonth: number, lastmonth: number} | null>();
+  const [AData, setAData] = useState<{thismonth: number, lastmonth: number} | null>();
+  const [LatestTransactions, setLatestTransactions] = useState<transactions[] | null>();
+
+  async function getTransactionCount(){
+    const res = await TransactionCount()
+    console.log(res)
+    setTData(res)
+    const alert = await AlertCount()
+    setAData(alert)
+  }
+  
+  useEffect(() => {
+    getTransactionCount()
+    const fetchLatestTransactions = async () => {
+      const data = await getLatestTransactions(50);
+      setLatestTransactions(data)
+    }
+    fetchLatestTransactions()
+  }, []);
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40 py-6">
       <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -20,8 +44,8 @@ export default function Page() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12,345</div>
-              <p className="text-xs text-muted-foreground">+5.2% from last month</p>
+              <div className="text-2xl font-bold">{TData?.thismonth}</div>
+              <p className="text-xs text-muted-foreground">{TData && Math.round(100*(TData.thismonth*2 - TData.lastmonth)/TData.lastmonth)}% from last month</p>
             </CardContent>
           </Card>
           <Card>
@@ -33,8 +57,8 @@ export default function Page() {
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">78</div>
-              <p className="text-xs text-muted-foreground">+12 new alerts this week</p>
+              <div className="text-2xl font-bold">{AData?.thismonth}</div>
+              <p className="text-xs text-muted-foreground">{AData && AData.lastmonth - 2*AData.thismonth} new alerts this month</p>
             </CardContent>
           </Card>
           <Card>
@@ -43,8 +67,8 @@ export default function Page() {
               <PercentIcon className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">2.5%</div>
-              <p className="text-xs text-muted-foreground">-0.3% from last month</p>
+              <div className="text-2xl font-bold">{TData && AData && Math.round(100*AData.thismonth/TData.thismonth)}%</div>
+              <p className="text-xs text-muted-foreground">{TData && AData && Math.round(100*AData.lastmonth/TData.lastmonth -  100*AData.thismonth/TData.thismonth)}% from last month</p>
             </CardContent>
           </Card>
         </div>
@@ -97,127 +121,42 @@ export default function Page() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">TX123456</TableCell>
-                  <TableCell>$250.00</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">Normal</Badge>
-                  </TableCell>
-                  <TableCell>2023-06-23 10:42 AM</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <ExpandIcon className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Flag as Fraudulent</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">TX987654</TableCell>
-                  <TableCell>$150.00</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">Fraudulent</Badge>
-                  </TableCell>
-                  <TableCell>2023-06-24 03:21 PM</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <ExpandIcon className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Flag as Normal</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">TX456789</TableCell>
-                  <TableCell>$350.00</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">Normal</Badge>
-                  </TableCell>
-                  <TableCell>2023-06-25 08:15 AM</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <ExpandIcon className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Flag as Fraudulent</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">TX789012</TableCell>
-                  <TableCell>$450.00</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">Normal</Badge>
-                  </TableCell>
-                  <TableCell>2023-06-26 12:00 PM</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <ExpandIcon className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Flag as Fraudulent</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">TX012345</TableCell>
-                  <TableCell>$550.00</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">Fraudulent</Badge>
-                  </TableCell>
-                  <TableCell>2023-06-27 09:30 AM</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <ExpandIcon className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Flag as Normal</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                {LatestTransactions?.map((transaction) => (
+                  <TableRow key={transaction.transactionId}>
+                    <TableCell className="font-medium">{transaction.transactionId}</TableCell>
+                    <TableCell>${transaction.amount}</TableCell>
+                    <TableCell>
+                      <Badge variant={transaction.status === 'Approved' ? 'default' : 'destructive'}>{transaction.status}</Badge>
+                    </TableCell>
+                    <TableCell>{transaction.createdAt.toString()}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <ExpandIcon className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            <Link href={`/transactions/${transaction.transactionId}`}>
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>Flag as Fraudulent</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                
               </TableBody>
             </Table>
           </CardContent>
           <CardFooter>
             <div className="text-xs text-muted-foreground">
-              Showing <strong>1-10</strong> of <strong>32</strong> transactions
+              Showing <strong>1-50</strong> of <strong>10000</strong> transactions
             </div>
           </CardFooter>
         </Card>

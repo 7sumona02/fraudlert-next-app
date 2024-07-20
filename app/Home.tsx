@@ -6,7 +6,9 @@ import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { dataUpload } from "@/actions/db"
+import { dataUpload, getLatestTransactions, getTransactionsByDay } from "@/actions/db"
+import { useEffect, useState } from "react"
+import { transactions } from "@prisma/client"
 
 interface SelectProps {
   children: React.ReactNode;
@@ -15,10 +17,19 @@ interface SelectProps {
 }
 
 export default function Home() {
+  const [LatestTransactions, setLatestTransactions] = useState<transactions[] | null>();
   async function upload() {
-    await dataUpload();
+    await getTransactionsByDay(20);
     console.log("Done")
   }
+
+  useEffect(() => {
+    const fetchLatestTransactions = async () => {
+      const data = await getLatestTransactions();
+      setLatestTransactions(data)
+    }
+    fetchLatestTransactions()
+  },[]);
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4 p-4 md:p-6">
@@ -60,72 +71,28 @@ export default function Home() {
               Export
             </Button>
           </div>
-          <Table>
+          <Table className="max-h-40 overflow-y-scroll">
             <TableHeader>
               <TableRow>
                 <TableHead>Timestamp</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Location</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Flags</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell>2023-04-15 10:23 AM</TableCell>
-                <TableCell>$250.00</TableCell>
-                <TableCell>New York, NY</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">Pending</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">High Risk</Badge>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>2023-04-14 3:45 PM</TableCell>
-                <TableCell>$100.00</TableCell>
-                <TableCell>Los Angeles, CA</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">Pending</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">Unusual Location</Badge>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>2023-04-13 9:12 AM</TableCell>
-                <TableCell>$500.00</TableCell>
-                <TableCell>Chicago, IL</TableCell>
-                <TableCell>
-                  <Badge variant="default">Approved</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">Large Amount</Badge>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>2023-04-12 2:30 PM</TableCell>
-                <TableCell>$75.00</TableCell>
-                <TableCell>Miami, FL</TableCell>
-                <TableCell>
-                  <Badge variant="destructive">Declined</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">Suspicious Activity</Badge>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>2023-04-11 11:00 AM</TableCell>
-                <TableCell>$300.00</TableCell>
-                <TableCell>Seattle, WA</TableCell>
-                <TableCell>
-                  <Badge variant="default">Approved</Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">Unusual Frequency</Badge>
-                </TableCell>
-              </TableRow>
+            <TableBody className=" ">
+              {LatestTransactions?.map((transaction) => (
+                <TableRow key={transaction.transactionId}>
+                  <TableCell>{transaction.createdAt.toString()}</TableCell>
+                  <TableCell>${transaction.amount}</TableCell>
+                  <TableCell>
+                    <Badge variant={transaction.status === 'Approved' ? 'default' : 'destructive'}>{transaction.status}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{transaction.flag}</Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>

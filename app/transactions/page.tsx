@@ -14,8 +14,38 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Pagination, PaginationContent, PaginationItem } from "@/components/ui/pagination"
 import Search from "./Search"
+import { useEffect, useState } from "react"
+import { transactions } from "@prisma/client"
+import { getLatest6Month, getTransactionsByDay } from "@/actions/db"
 
 export default function Page() {
+  const [Last5Days, setLast5Days] = useState<{
+    [key: string]: {
+        amount: number;
+        status: string;
+        flag: string;
+    };
+} | null>();
+
+const [Last6Month, setLast6Month] = useState<{
+  [key: string]: {
+      amount: number;
+      month: string;
+  };
+} | null>();
+
+  useEffect(() => {
+    const fetchLast5Days = async () => {
+      // get transactions of last 5 days from today and give the total amount group by date and max status and maximum flag appeared
+      const data = await getTransactionsByDay(5);
+      const data2 = await getLatest6Month();
+      setLast5Days(data)
+      setLast6Month(data2)
+      console.log(data2)
+    }
+    fetchLast5Days()
+  }, []);
+
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <Search />
@@ -39,76 +69,22 @@ export default function Page() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow>
-                      <TableCell>$250.00</TableCell>
-                      <TableCell>2023-06-23</TableCell>
-                      <TableCell>New York, NY</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">Legitimate</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon">
-                          <EyeIcon className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>$150.00</TableCell>
-                      <TableCell>2023-06-24</TableCell>
-                      <TableCell>Los Angeles, CA</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">Fraudulent</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon">
-                          <EyeIcon className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>$350.00</TableCell>
-                      <TableCell>2023-06-25</TableCell>
-                      <TableCell>Chicago, IL</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">Legitimate</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon">
-                          <EyeIcon className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>$450.00</TableCell>
-                      <TableCell>2023-06-26</TableCell>
-                      <TableCell>Miami, FL</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">Fraudulent</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon">
-                          <EyeIcon className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>$550.00</TableCell>
-                      <TableCell>2023-06-27</TableCell>
-                      <TableCell>Seattle, WA</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">Legitimate</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="icon">
-                          <EyeIcon className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                    {Last5Days && Object.entries(Last5Days).map(([date, data]) => (
+                      <TableRow key={date}>
+                        <TableCell>${data.amount.toFixed(2)}</TableCell>
+                        <TableCell>{date}</TableCell>
+                        <TableCell>Multiple Locations</TableCell>
+                        <TableCell>
+                          <Badge variant={data.flag === "Fraudulent" ? "outline" : "secondary"}>{data.flag}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="icon">
+                            <EyeIcon className="h-4 w-4" />
+                            <span className="sr-only">View</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                  ))}
                   </TableBody>
                 </Table>
               </div>
@@ -229,7 +205,7 @@ export default function Page() {
             <CardContent>
               <div className="flex flex-col">
                 <BarchartChart className="w-full" />
-                <LinechartChart className="aspect-[16/9]" />
+                <LinechartChart  className="aspect-[16/9]"  />
               </div>
             </CardContent>
           </Card>
@@ -242,87 +218,86 @@ export default function Page() {
 interface BarchartChartProps extends React.HTMLAttributes<HTMLDivElement> {
   }
 
-function BarchartChart(props: BarchartChartProps) {
-  return (
-    <div {...props}>
-      <ChartContainer
-        config={{
-          desktop: {
-            label: "Desktop",
-            color: "#2563eb",
-          },
-        }}
-        className="min-h-[140px]"
-      >
-        <BarChart
-          accessibilityLayer
-          data={[
-            { month: "January", desktop: 186 },
-            { month: "February", desktop: 305 },
-            { month: "March", desktop: 237 },
-            { month: "April", desktop: 73 },
-            { month: "May", desktop: 209 },
-            { month: "June", desktop: 214 },
-          ]}
+  function BarchartChart(props: BarchartChartProps) {
+    return (
+      <div {...props}>
+        <ChartContainer
+          config={{
+            desktop: {
+              label: "Desktop",
+              color: "#2563eb",
+            },
+          }}
+          className="min-h-[140px]"
         >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="month"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-            tickFormatter={(value) => value.slice(0, 3)}
-          />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-          <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
-        </BarChart>
-      </ChartContainer>
-    </div>
-  )
-}
-
-interface LinechartChartProps extends React.HTMLAttributes<HTMLDivElement> {
-}
-
-function LinechartChart(props: LinechartChartProps) {
-  return (
-    <div {...props}>
-      <ChartContainer
-        config={{
-          desktop: {
-            label: "Desktop",
-            color: "#2563eb",
-          },
-        }}
-      >
-        <LineChart
-          accessibilityLayer
-          data={[
-            { month: "January", desktop: 186 },
-            { month: "February", desktop: 305 },
-            { month: "March", desktop: 237 },
-            { month: "April", desktop: 73 },
-            { month: "May", desktop: 209 },
-            { month: "June", desktop: 214 },
-          ]}
-          margin={{
-            left: 12,
-            right: 12,
+          <BarChart
+            accessibilityLayer
+            data={[
+              { month: "February", desktop: 305 },
+              { month: "March", desktop: 237 },
+              { month: "April", desktop: 73 },
+              { month: "May", desktop: 209 },
+              { month: "June", desktop: 214 },
+              { month: "July", desktop: 186 },
+            ]}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              tickMargin={10}
+              axisLine={false}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8} />
+          </BarChart>
+        </ChartContainer>
+      </div>
+    )
+  }
+  
+  interface LinechartChartProps extends React.HTMLAttributes<HTMLDivElement> {
+  }
+  
+  function LinechartChart(props: LinechartChartProps) {
+    return (
+      <div {...props}>
+        <ChartContainer
+          config={{
+            desktop: {
+              label: "Desktop",
+              color: "#2563eb",
+            },
           }}
         >
-          <CartesianGrid vertical={false} />
-          <XAxis
-            dataKey="month"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-            tickFormatter={(value) => value.slice(0, 3)}
-          />
-          <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-          <Line dataKey="desktop" type="natural" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
-        </LineChart>
-      </ChartContainer>
-    </div>
-  )
-}
-
+          <LineChart
+            accessibilityLayer
+            data={[
+              { month: "February", desktop: 305 },
+              { month: "March", desktop: 237 },
+              { month: "April", desktop: 73 },
+              { month: "May", desktop: 209 },
+              { month: "June", desktop: 214 },
+              { month: "July", desktop: 186 },
+            ]}
+            margin={{
+              left: 12,
+              right: 12,
+            }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => value.slice(0, 3)}
+            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <Line dataKey="desktop" type="natural" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ChartContainer>
+      </div>
+    )
+  }
