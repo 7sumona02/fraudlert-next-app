@@ -179,7 +179,7 @@ export default function Page() {
                   <p className="text-sm text-muted-foreground">
                     A transaction of $550 from an unknown IP address was flagged as potentially fraudulent.
                   </p>
-                  <div className="text-xs text-muted-foreground">2023-06-27 09:30 AM</div>
+                  <div className="text-xs text-muted-foreground">2024-06-27 09:30 AM</div>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -191,7 +191,7 @@ export default function Page() {
                   <p className="text-sm text-muted-foreground">
                     A series of small transactions from the same account within a short time frame has been detected.
                   </p>
-                  <div className="text-xs text-muted-foreground">2023-06-26 03:45 PM</div>
+                  <div className="text-xs text-muted-foreground">2024-06-26 03:45 PM</div>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -203,7 +203,7 @@ export default function Page() {
                   <p className="text-sm text-muted-foreground">
                     Unusual login activity from a new device has been detected on an account.
                   </p>
-                  <div className="text-xs text-muted-foreground">2023-06-25 11:20 AM</div>
+                  <div className="text-xs text-muted-foreground">2024-06-25 11:20 AM</div>
                 </div>
               </div>
             </div>

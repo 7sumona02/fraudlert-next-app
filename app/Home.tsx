@@ -6,20 +6,15 @@ import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import {  getLatestTransactionDate, getLatestTransactions, getTransactionByType, getTransactionsByDay, setTransactionData } from "@/actions/db"
+import {  getLatestTransactionDate, getLatestTransactions, getTransactionByType, setTransactionData } from "@/actions/db"
 import { useEffect, useState } from "react"
 import { transactions } from "@prisma/client"
 import { toast } from "sonner"
 
-interface SelectProps {
-  children: React.ReactNode;
-  id: string;
-  className: string;
-}
 
 export default function Home() {
   const [LatestTransactions, setLatestTransactions] = useState<transactions[] | null>();
-
+const [listening, setListening] = useState(false);
   async function prediction(data: transactions) {
     const result = await fetch(`http://localhost:8000/predict?t=${data.transactionType}&a=${data.amount}&p=${data.oldBalance}&n=${data.newBalance}`)
     const json = await result.json()
@@ -37,7 +32,9 @@ export default function Home() {
   }
 
 
-  async function upload() {
+  async function runner() {
+    toast.success("Auto-Approve Enabled")
+    setListening(true)
     let dateNow = await getLatestTransactionDate();
     console.log(dateNow)
     setInterval(async () => {
@@ -103,8 +100,8 @@ export default function Home() {
         <div className="bg-background rounded-lg shadow-sm p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Recent Transactions</h2>
-            <Button onClick={upload} variant="outline" size="sm">
-              Export
+            <Button onClick={runner} disabled={listening} variant="outline" size="sm">
+              Enable Auto-Approve
             </Button>
           </div>
           <Table className="max-h-40 overflow-y-scroll">
@@ -120,7 +117,7 @@ export default function Home() {
               {LatestTransactions?.map((transaction) => (
                 <TableRow key={transaction.transactionId}>
                   <TableCell>{transaction.createdAt.toString()}</TableCell>
-                  <TableCell>${transaction.amount}</TableCell>
+                  <TableCell>Rs {transaction.amount}</TableCell>
                   <TableCell>
                     <Badge variant={transaction.status === 'Approved' ? 'default' : 'destructive'}>{transaction.status}</Badge>
                   </TableCell>
@@ -151,7 +148,7 @@ export default function Home() {
             </TableHeader>
             <TableBody>
               <TableRow>
-                <TableCell>2023-04-15 11:30 AM</TableCell>
+                <TableCell>2024-04-15 11:30 AM</TableCell>
                 <TableCell>Suspicious Activity</TableCell>
                 <TableCell>Unusual transaction pattern detected for account #123456789</TableCell>
                 <TableCell>
@@ -167,7 +164,7 @@ export default function Home() {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>2023-04-14 4:45 PM</TableCell>
+                <TableCell>2024-04-14 4:45 PM</TableCell>
                 <TableCell>Unusual Location</TableCell>
                 <TableCell>Transaction from an unfamiliar location for account #987654321</TableCell>
                 <TableCell>
@@ -183,7 +180,7 @@ export default function Home() {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>2023-04-13 10:00 AM</TableCell>
+                <TableCell>2024-04-13 10:00 AM</TableCell>
                 <TableCell>Large Amount</TableCell>
                 <TableCell>Unusually large transaction for account #456789123</TableCell>
                 <TableCell>
@@ -196,7 +193,7 @@ export default function Home() {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>2023-04-12 3:15 PM</TableCell>
+                <TableCell>2024-04-12 3:15 PM</TableCell>
                 <TableCell>Unusual Frequency</TableCell>
                 <TableCell>Multiple transactions in a short period for account #789123456</TableCell>
                 <TableCell>
