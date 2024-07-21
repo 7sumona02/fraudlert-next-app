@@ -181,3 +181,40 @@ export async function AlertCount(){
     lastmonth,
   }
 }
+
+export async function getLatestTransactionDate(){
+  const result = await prisma.transactions.findMany({
+    take: 1,
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+  return result[0]
+}
+
+export async function getTransactionByType(till: Date){
+  const result = await prisma.transactions.findMany({
+    where:{
+      createdAt: {
+        gt: till
+      },
+      status: 'processing'
+    },
+  })
+
+  return result
+}
+
+export async function setTransactionData(id: string, status: string, alertType: string, flag: string){
+  const result = await prisma.transactions.update({
+    where: {
+      transactionId: id
+    },
+    data: {
+      status,
+      alertType,
+      flag
+    }
+  })
+  return result
+}

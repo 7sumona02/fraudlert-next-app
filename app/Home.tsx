@@ -6,9 +6,10 @@ import { Select } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { dataUpload, getLatestTransactions, getTransactionsByDay } from "@/actions/db"
+import {  getLatestTransactionDate, getLatestTransactions, getTransactionByType, getTransactionsByDay, setTransactionData } from "@/actions/db"
 import { useEffect, useState } from "react"
 import { transactions } from "@prisma/client"
+import { toast } from "sonner"
 
 interface SelectProps {
   children: React.ReactNode;
@@ -18,17 +19,52 @@ interface SelectProps {
 
 export default function Home() {
   const [LatestTransactions, setLatestTransactions] = useState<transactions[] | null>();
-  async function upload() {
-    await getTransactionsByDay(20);
-    console.log("Done")
+
+  async function prediction(data: transactions) {
+    const result = await fetch(`http://localhost:8000/predict?t=${data.transactionType}&a=${data.amount}&p=${data.oldBalance}&n=${data.newBalance}`)
+    const json = await result.json()
+    console.log(json.prediction)
+    if (json.prediction === true) {
+      await setTransactionData(data.transactionId, "Disapproved", "Fraud", "Suspicious")
+      toast.error(`Fraud Alert - Transaction Disapproved: #${data.transactionId.slice(0, 5)}`)
+    }
+    else {
+      await setTransactionData(data.transactionId, "Approved", "Completed", "Clear")
+      toast.success(`Transaction Approved: #${data.transactionId.slice(0, 5)}`)
+    }
+    await fetchLatestTransactions()
+    return json
   }
 
-  useEffect(() => {
-    const fetchLatestTransactions = async () => {
+
+  async function upload() {
+    let dateNow = await getLatestTransactionDate();
+    console.log(dateNow)
+    setInterval(async () => {
+      console.log("checking for new data")
+      const data = await getTransactionByType(dateNow.createdAt);
+      if (data.length > 0) {
+        dateNow = data[0];
+        console.log("New Date")
+        for (let i = 0; i < data.length; i++) {
+          console.log(data[i])
+          const res = await prediction(data[i])
+          console.log("Hi")
+        }
+      }
+    },5000)
+  }
+
+
+  const fetchLatestTransactions = async () => {
       const data = await getLatestTransactions();
       setLatestTransactions(data)
     }
+  
+  useEffect(() => {
+    
     fetchLatestTransactions()
+    console.log("fetching data")
   },[]);
   return (
     <div className="flex flex-col min-h-screen">
